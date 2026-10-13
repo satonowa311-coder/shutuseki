@@ -1,0 +1,4 @@
+import { authorize,readDocument,AppError } from '../../../../lib/store';
+import { reportHtml } from '../../../../lib/report.mjs';
+export const dynamic='force-dynamic';
+export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){try{const a=await authorize();if(a.role!=='admin')throw new AppError('管理者のみ出力できます',403);const {id}=await params;const d=await readDocument(a.db);const report=d.state.reports.find((r:any)=>r.id===id);if(!report)throw new AppError('確定済み報告が見つかりません',404);return new Response(reportHtml(report),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'self'"}});}catch(e){return Response.json({error:e instanceof AppError?e.message:'取得に失敗しました'},{status:e instanceof AppError?e.status:500,headers:{'Cache-Control':'no-store'}});}}

@@ -1,0 +1,3 @@
+import { authorize,readDocument,AppError } from '../../../lib/store';
+export const dynamic='force-dynamic';
+export async function GET(){try{const a=await authorize();if(a.role!=='admin')throw new AppError('管理者のみ操作できます',403);const d=await readDocument(a.db);return Response.json({schemaVersion:1,exportedAt:new Date().toISOString(),...d},{headers:{'Cache-Control':'no-store','Content-Disposition':'attachment; filename="satonowa-backup.json"'}});}catch(e){return Response.json({error:e instanceof AppError?e.message:'取得に失敗しました'},{status:e instanceof AppError?e.status:500,headers:{'Cache-Control':'no-store'}});}}

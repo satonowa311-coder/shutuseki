@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync} from 'node:fs';
+test('Compare-and-swap prevents a stale edit and stale audit entry',()=>{const db=new DatabaseSync(':memory:');db.exec(readFileSync(new URL('../drizzle/0000_school.sql',import.meta.url),'utf8').replaceAll('--> statement-breakpoint',''));db.prepare('INSERT INTO documents VALUES (1,0,?,?)').run('{}','initial');const update=db.prepare('UPDATE documents SET payload=?,revision=revision+1,change_id=? WHERE id=1 AND revision=?'),audit=db.prepare('INSERT INTO audits(id,actor,operation,created_at,revision) SELECT ?,?,?,?,revision FROM documents WHERE id=1 AND change_id=?');assert.equal(update.run('{"saved":true}','a',0).changes,1);audit.run('a','職員A','record','2026-09-14','a');assert.equal(update.run('{"overwrite":true}','b',0).changes,0);audit.run('b','職員B','record','2026-09-14','b');assert.equal(db.prepare('SELECT count(*) AS n FROM audits').get().n,1);assert.equal(db.prepare('SELECT payload FROM documents').get().payload,'{"saved":true}');db.close();});
